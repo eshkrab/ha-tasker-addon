@@ -1,10 +1,23 @@
 # custom_components/tasker/tasks.py
 import datetime
 import uuid
+import re
+
+def slugify(value):
+    """Simple slugify function to make a safe task ID."""
+    value = value.lower().strip()
+    # Replace non-alphanumeric characters with underscores
+    value = re.sub(r'[^a-z0-9]+', '_', value)
+    return value.strip('_')
 
 class Task:
     def __init__(self, friendly_name, description="", start_date=None, recurring=False, recurrence_interval=None, alert=False, task_id=None):
-        self.task_id = task_id or str(uuid.uuid4())
+        # Generate a safe task_id from the friendly name if none provided.
+        if task_id is None:
+            task_id = slugify(friendly_name)
+        else:
+            task_id = slugify(task_id)
+        self.task_id = task_id
         self.friendly_name = friendly_name
         self.description = description
         self.start_date = start_date or datetime.date.today().isoformat()
