@@ -1,30 +1,32 @@
 import { LitElement, html, css } from 'lit';
+import '@material/mwc-button'; 
 
 class TaskerSimpleCard extends LitElement {
-  static styles = css`
-    :host {
-      display: block;
-      padding: 16px;
-    }
-    ha-card {
-      padding: 16px;
-      margin: 8px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    p {
-      margin: 8px 0;
-    }
-    mwc-button {
-      margin-top: 12px;
-    }
-  `;
+  static get styles() {
+    return css`
+      :host {
+        display: block;
+        padding: 16px;
+      }
+      ha-card {
+        padding: 16px;
+        margin: 8px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      mwc-button {
+        margin-top: 12px;
+      }
+    `;
+  }
 
   constructor() {
     super();
-    this.friendlyName = '';
   }
 
   render() {
@@ -33,16 +35,14 @@ class TaskerSimpleCard extends LitElement {
         <div class="card-content">
           <h1>Hello from Tasker!</h1>
           <p>This is a minimal custom card.</p>
-          <mwc-button raised @click="${this._handleClick}">
-            Test Service
-          </mwc-button>
+          <mwc-button raised @click="${this._handleClick}">Test Service</mwc-button>
         </div>
       </ha-card>
     `;
   }
 
   _handleClick() {
-    // Dispatch a service call event to Home Assistant's service system.
+    // Dispatch a service call event to Home Assistant.
     this.dispatchEvent(new CustomEvent('hass-call-service', {
       detail: {
         domain: 'tasker',
@@ -62,4 +62,3 @@ class TaskerSimpleCard extends LitElement {
 }
 
 customElements.define('tasker-simple-card', TaskerSimpleCard);
-
