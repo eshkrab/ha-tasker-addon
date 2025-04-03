@@ -20,6 +20,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
     store = Store(hass, STORE_VERSION, STORE_KEY)
     task_manager = TaskManager(hass, store)
+    hass.http.register_static_path(
+        "/local/tasker", hass.config.path("custom_components/tasker/www"), True
+    )
+
     await task_manager.async_load()
     hass.data[DOMAIN][entry.entry_id] = {
         "task_manager": task_manager,
