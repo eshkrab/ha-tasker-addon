@@ -10,7 +10,7 @@ from .const import DOMAIN, DEFAULT_RECURRENCE, DEFAULT_TASK_LIST_NAME
 _LOGGER = logging.getLogger(__name__)
 
 class TaskerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Tasker integration."""
+    """Handle a config flow for the Tasker integration."""
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
@@ -18,7 +18,7 @@ class TaskerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
-            # The title of the config entry will be the task list name
+            # Use the task list name as the entry title
             return self.async_create_entry(title=user_input["task_list_name"], data=user_input)
         
         data_schema = vol.Schema({
@@ -41,7 +41,7 @@ class TaskerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class TaskerOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle an options flow for Tasker."""
     def __init__(self, config_entry):
-        # Use a private variable to avoid the deprecation warning
+        # Store in a private variable to avoid deprecation warnings.
         self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
