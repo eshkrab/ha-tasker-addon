@@ -1,0 +1,10 @@
+{
+  "domain": "tasker",
+  "name": "Tasker",
+  "version": "1.0.0",
+  "documentation": "https://github.com/eshkra/ha-tasker-addon",
+  "requirements": [],
+  "codeowners": ["@eshkrab"],
+  "iot_class": "local_polling"
+}
+

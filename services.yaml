@@ -1,0 +1,8 @@
+mark_done:
+  name: "Mark Task Done"
+  description: "Mark the specified Tasker sensor as completed, resetting its due date if recurring."
+  fields:
+    entity_id:
+      description: "One or more Tasker sensor entity IDs"
+      example: "sensor.task_my_house_tasks"
+
