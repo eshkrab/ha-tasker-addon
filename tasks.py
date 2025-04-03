@@ -1,6 +1,5 @@
 # custom_components/tasker/tasks.py
 import datetime
-import uuid
 import re
 from datetime import date, timedelta
 
@@ -21,19 +20,19 @@ class Task:
         self.task_id = task_id
         self.friendly_name = friendly_name
         self.description = description
-        self.start_date = start_date or date.today().isoformat()  # ISO date string YYYY-MM-DD
+        # Expect an ISO date string (YYYY-MM-DD)
+        self.start_date = start_date or date.today().isoformat()
         self.recurring = recurring
         self.recurrence_interval = recurrence_interval  # in days
         self.alert = alert
         self.last_done = None
-        self.manual_state = manual_state  # can be set to "in_progress" manually
+        self.manual_state = manual_state  # e.g. "in_progress" (overrides computed state)
         self.next_due_date = self.calculate_next_due_date()
 
     def calculate_next_due_date(self):
         """Calculate the next due date for recurring tasks."""
         if self.recurring:
-            # If the task was done before, base the next due date on that;
-            # otherwise, use the start date.
+            # Use last_done if available; otherwise, use start_date.
             base_date = date.fromisoformat(self.last_done) if self.last_done else date.fromisoformat(self.start_date)
             if self.recurrence_interval:
                 next_due = base_date + timedelta(days=self.recurrence_interval)
@@ -41,48 +40,41 @@ class Task:
         return None
 
     def mark_done(self):
-        """Mark task as done and update the next due date for recurring tasks."""
+        """Mark the task as done and, if recurring, update the next due date."""
         self.last_done = date.today().isoformat()
-        # Clear any manual state override.
-        self.manual_state = None
+        self.manual_state = None  # clear any manual override
         self.next_due_date = self.calculate_next_due_date()
 
     @property
     def state(self):
-        """Compute the task state based on dates and manual overrides."""
-        # If manually set to "in_progress", return that.
+        """Compute the current state of the task based on dates and manual override."""
+        # Manual override (for instance, "in_progress") takes precedence.
         if self.manual_state:
             return self.manual_state
 
         today = date.today()
-
-        # For non-recurring tasks:
+        # Non-recurring tasks:
         if not self.recurring:
-            due_date = date.fromisoformat(self.start_date) if self.start_date else None
-            # Once done, non-recurring tasks remain done.
             if self.last_done:
                 return "done"
-            if due_date:
-                if today < due_date:
-                    return "scheduled"
-                elif today == due_date:
-                    return "pending"
-                elif today > due_date:
-                    return "overdue"
-            return "pending"
-
-        # For recurring tasks:
-        # Use next_due_date if available, otherwise fall back to start_date.
-        due_date_str = self.next_due_date if self.last_done else self.start_date
-        if due_date_str:
-            due_date = date.fromisoformat(due_date_str)
+            due_date = date.fromisoformat(self.start_date)
             if today < due_date:
                 return "scheduled"
             elif today == due_date:
                 return "pending"
-            elif today > due_date:
+            else:
                 return "overdue"
-        return "pending"
+        else:
+            # For recurring tasks, if the task has been done before, use next_due_date.
+            # Otherwise, use the start_date.
+            due_str = self.next_due_date if self.last_done else self.start_date
+            due_date = date.fromisoformat(due_str)
+            if today < due_date:
+                return "scheduled"
+            elif today == due_date:
+                return "pending"
+            else:
+                return "overdue"
 
     def to_dict(self):
         return {
@@ -114,3 +106,54 @@ class Task:
         task.next_due_date = data.get("next_due_date") or task.calculate_next_due_date()
         return task
 
+class TaskManager:
+    def __init__(self, hass, store):
+        self.hass = hass
+        self.store = store
+        self.tasks = {}  # Dictionary mapping task_id to Task
+
+    async def async_load(self):
+        """Load tasks from persistent storage."""
+        data = await self.store.async_load()
+        if data is not None:
+            for task_data in data.get("tasks", []):
+                task = Task.from_dict(task_data)
+                self.tasks[task.task_id] = task
+
+    async def async_save(self):
+        """Save tasks to persistent storage."""
+        data = {"tasks": [task.to_dict() for task in self.tasks.values()]}
+        await self.store.async_save(data)
+
+    async def async_add_task(self, task: Task):
+        self.tasks[task.task_id] = task
+        await self.async_save()
+        return task
+
+    async def async_update_task(self, task_id, updates):
+        task = self.tasks.get(task_id)
+        if not task:
+            return None
+        # Update allowed fields.
+        for key, value in updates.items():
+            if key in ["friendly_name", "description", "start_date", "recurring", "recurrence_interval", "alert", "manual_state"]:
+                setattr(task, key, value)
+        # Recalculate next due date after updates.
+        task.next_due_date = task.calculate_next_due_date()
+        await self.async_save()
+        return task
+
+    async def async_delete_task(self, task_id):
+        if task_id in self.tasks:
+            del self.tasks[task_id]
+            await self.async_save()
+            return True
+        return False
+
+    async def async_mark_task_done(self, task_id):
+        task = self.tasks.get(task_id)
+        if not task:
+            return None
+        task.mark_done()
+        await self.async_save()
+        return task
