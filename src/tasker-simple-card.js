@@ -1,5 +1,4 @@
 import { LitElement, html, css } from 'lit';
-import '@material/mwc-button'; 
 
 class TaskerSimpleCard extends LitElement {
   static get styles() {
@@ -24,6 +23,13 @@ class TaskerSimpleCard extends LitElement {
       }
     `;
   }
+
+  setConfig(config) {
+    // Optionally, store the config if needed.
+    // For now, we don't need any special config:
+    this._config = config;
+  }
+
 
   constructor() {
     super();
@@ -61,4 +67,7 @@ class TaskerSimpleCard extends LitElement {
   }
 }
 
+console.log("HELLO WORLD");
 customElements.define('tasker-simple-card', TaskerSimpleCard);
+console.log("tasker-simple-card registered", customElements.get("tasker-simple-card"));
+console.log("HELLO WORLD");
