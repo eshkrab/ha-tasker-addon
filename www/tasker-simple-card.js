@@ -1,15 +1,11 @@
-import { LitElement, html, css } from 'lit';
-import { customElement } from 'lit/decorators.js';
-
-@customElement('tasker-simple-card')
-class TaskerSimpleCard extends LitElement {
-  static styles = css`
+import{LitElement as e,css as t,html as a}from"lit";class s extends e{static styles=t`
     :host {
       display: block;
       padding: 16px;
     }
     ha-card {
       padding: 16px;
+      margin: 8px;
     }
     h1 {
       margin: 0;
@@ -21,37 +17,14 @@ class TaskerSimpleCard extends LitElement {
     mwc-button {
       margin-top: 12px;
     }
-  `;
-
-  render() {
-    return html`
+  `;constructor(){super(),this.friendlyName=""}render(){return a`
       <ha-card header="Tasker Simple Card">
         <div class="card-content">
           <h1>Hello from Tasker!</h1>
           <p>This is a minimal custom card.</p>
-          <mwc-button raised @click="${this._handleClick}">Test Service</mwc-button>
+          <mwc-button raised @click="${this._handleClick}">
+            Test Service
+          </mwc-button>
         </div>
       </ha-card>
-    `;
-  }
-
-  _handleClick() {
-    // Dispatch a service call event to Home Assistant.
-    this.dispatchEvent(new CustomEvent('hass-call-service', {
-      detail: {
-        domain: 'tasker',
-        service: 'add_task',
-        serviceData: {
-          friendly_name: 'Test Task',
-          description: 'This is a test task from the simple card',
-          start_date: new Date().toISOString().split('T')[0],
-          recurring: false,
-          alert: false
-        }
-      },
-      bubbles: true,
-      composed: true
-    }));
-  }
-}
-
+    `}_handleClick(){this.dispatchEvent(new CustomEvent("hass-call-service",{detail:{domain:"tasker",service:"add_task",serviceData:{friendly_name:"Test Task",description:"This is a test task from the simple card",start_date:(new Date).toISOString().split("T")[0],recurring:!1,alert:!1}},bubbles:!0,composed:!0}))}}customElements.define("tasker-simple-card",s);

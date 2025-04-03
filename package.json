@@ -1,0 +1,28 @@
+{
+  "name": "tasker",
+  "version": "1.0.0",
+  "description": "Tasker is a lightweight custom integration that lets you manage both recurring and one-off tasks, chores, or maintenance items directly within Home Assistant.",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eshkrab/ha-tasker-addon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/eshkrab/ha-tasker-addon/issues"
+  },
+  "homepage": "https://github.com/eshkrab/ha-tasker-addon#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^2.79.2"
+  }
+}
