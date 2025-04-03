@@ -1,147 +1,106 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html } from 'lit';
 
 class TaskerNewTaskCard extends LitElement {
+  static get properties() {
+    return {
+      hass: {},
+      config: {},
+      task: { type: Object }
+    };
+  }
+
+  // Return an empty array of styles so no custom CSS is injected.
   static get styles() {
-    return css`
-      ha-card {
-        padding: 16px;
-        margin: 8px;
-      }
-      .card-content {
-        display: flex;
-        flex-direction: column;
-      }
-      .card-content > div {
-        margin-bottom: 12px;
-      }
-      label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 4px;
-      }
-      input[type="text"],
-      input[type="date"],
-      input[type="number"] {
-        width: 100%;
-        padding: 4px;
-        box-sizing: border-box;
-      }
-      .card-actions {
-        text-align: right;
-      }
-    `;
+    return [];
   }
 
   constructor() {
     super();
-    // Initialize properties manually instead of using @state()
-    this.friendlyName = '';
-    this.description = '';
-    this.startDate = '';
-    this.recurring = false;
-    this.recurrenceInterval = '';
-    this.alert = false;
+    // Default values for a new task
+    this.task = {
+      friendly_name: '',
+      description: '',
+      start_date: new Date().toISOString().split('T')[0],
+      recurring: false,
+      recurrence_interval: '',
+      alert: false,
+    };
+  }
+
+  // The hass setter is automatically called when Home Assistant passes the hass object.
+  set hass(hass) {
+    this._hass = hass;
+  }
+
+  setConfig(config) {
+    // Use a default title if none is provided
+    this.config = { title: config.title || 'New Task' };
+  }
+
+  _handleInput(e) {
+    const field = e.target.name;
+    let value = e.target.value;
+    if (e.target.type === 'checkbox') {
+      value = e.target.checked;
+    }
+    this.task = { ...this.task, [field]: value };
+  }
+
+  _createOrUpdateTask() {
+    console.log("Creating/updating task with:", this.task);
+    if (this._hass) {
+      const service = this.task.task_id ? 'update_task' : 'add_task';
+      this._hass.callService('tasker', service, this.task);
+    } else {
+      console.error("Home Assistant instance not available");
+    }
+    // Clear the form after submission
+    this.task = {
+      friendly_name: '',
+      description: '',
+      start_date: new Date().toISOString().split('T')[0],
+      recurring: false,
+      recurrence_interval: '',
+      alert: false,
+    };
   }
 
   render() {
     return html`
-      <ha-card header="New Task">
-        <div class="card-content">
-          <div>
-            <label>Friendly Name</label>
-            <input type="text" 
-                   .value=${this.friendlyName} 
-                   @input=${this._handleFriendlyName} 
-                   placeholder="Enter task name" />
-          </div>
-          <div>
-            <label>Description</label>
-            <input type="text" 
-                   .value=${this.description} 
-                   @input=${this._handleDescription} 
-                   placeholder="Enter description" />
-          </div>
-          <div>
-            <label>Start Date</label>
-            <input type="date" 
-                   .value=${this.startDate} 
-                   @input=${this._handleStartDate} />
-          </div>
-          <div>
-            <label>Recurring</label>
-            <input type="checkbox" 
-                   .checked=${this.recurring} 
-                   @change=${this._handleRecurring} />
-          </div>
-          <div>
-            <label>Recurrence Interval (days)</label>
-            <input type="number" 
-                   .value=${this.recurrenceInterval} 
-                   @input=${this._handleRecurrenceInterval} 
-                   placeholder="E.g., 7" />
-          </div>
-          <div>
-            <label>Alert</label>
-            <input type="checkbox" 
-                   .checked=${this.alert} 
-                   @change=${this._handleAlert} />
-          </div>
+      <ha-card header="${this.config.title}">
+        <div>
+          <label>Friendly Name</label>
+          <input type="text" name="friendly_name" .value="${this.task.friendly_name}" @input="${this._handleInput}" />
         </div>
-        <div class="card-actions">
-          <mwc-button raised @click=${this._createTask}>Create Task</mwc-button>
+        <div>
+          <label>Description</label>
+          <input type="text" name="description" .value="${this.task.description}" @input="${this._handleInput}" />
+        </div>
+        <div>
+          <label>Start Date</label>
+          <input type="date" name="start_date" .value="${this.task.start_date}" @input="${this._handleInput}" />
+        </div>
+        <div>
+          <label>Recurring</label>
+          <input type="checkbox" name="recurring" .checked="${this.task.recurring}" @change="${this._handleInput}" />
+        </div>
+        <div>
+          <label>Recurrence Interval (days)</label>
+          <input type="number" name="recurrence_interval" .value="${this.task.recurrence_interval}" @input="${this._handleInput}" />
+        </div>
+        <div>
+          <label>Alert</label>
+          <input type="checkbox" name="alert" .checked="${this.task.alert}" @change="${this._handleInput}" />
+        </div>
+        <div>
+          <button @click="${this._createOrUpdateTask}">
+            ${this.task.task_id ? 'Update Task' : 'Create Task'}
+          </button>
         </div>
       </ha-card>
     `;
   }
-
-  _handleFriendlyName(e) {
-    this.friendlyName = e.target.value;
-  }
-  _handleDescription(e) {
-    this.description = e.target.value;
-  }
-  _handleStartDate(e) {
-    this.startDate = e.target.value;
-  }
-  _handleRecurring(e) {
-    this.recurring = e.target.checked;
-  }
-  _handleRecurrenceInterval(e) {
-    this.recurrenceInterval = e.target.value;
-  }
-  _handleAlert(e) {
-    this.alert = e.target.checked;
-  }
-
-  _createTask() {
-    const serviceData = {
-      friendly_name: this.friendlyName,
-      description: this.description,
-      start_date: this.startDate,
-      recurring: this.recurring,
-      recurrence_interval: this.recurrenceInterval ? Number(this.recurrenceInterval) : undefined,
-      alert: this.alert,
-    };
-
-    // Dispatch a service call event to Home Assistant.
-    this.dispatchEvent(new CustomEvent('hass-call-service', {
-      detail: {
-        domain: 'tasker',
-        service: 'add_task',
-        serviceData: serviceData,
-      },
-      bubbles: true,
-      composed: true,
-    }));
-
-    // Optionally clear the form fields after submission.
-    this.friendlyName = '';
-    this.description = '';
-    this.startDate = '';
-    this.recurring = false;
-    this.recurrenceInterval = '';
-    this.alert = false;
-  }
 }
 
 customElements.define('tasker-new-task-card', TaskerNewTaskCard);
+console.log("tasker-new-task-card registered", customElements.get("tasker-new-task-card"));
