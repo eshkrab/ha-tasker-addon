@@ -5,18 +5,12 @@ class TaskerNewTaskCard extends LitElement {
     return {
       hass: {},
       config: {},
-      task: { type: Object }
+      task: { type: Object },
     };
-  }
-
-  // Return an empty array of styles so no custom CSS is injected.
-  static get styles() {
-    return [];
   }
 
   constructor() {
     super();
-    // Default values for a new task
     this.task = {
       friendly_name: '',
       description: '',
@@ -27,23 +21,40 @@ class TaskerNewTaskCard extends LitElement {
     };
   }
 
-  // The hass setter is automatically called when Home Assistant passes the hass object.
+  // Home Assistant passes the hass object via this setter.
   set hass(hass) {
     this._hass = hass;
   }
 
   setConfig(config) {
-    // Use a default title if none is provided
+    // Ensure a title is defined
     this.config = { title: config.title || 'New Task' };
   }
 
-  _handleInput(e) {
-    const field = e.target.name;
-    let value = e.target.value;
-    if (e.target.type === 'checkbox') {
-      value = e.target.checked;
-    }
-    this.task = { ...this.task, [field]: value };
+  _handleFriendlyName(e) {
+    this.task = { ...this.task, friendly_name: e.target.value };
+  }
+
+  _handleDescription(e) {
+    this.task = { ...this.task, description: e.target.value };
+  }
+
+  _handleStartDate(e) {
+    this.task = { ...this.task, start_date: e.target.value };
+  }
+
+  _handleRecurring(e) {
+    this.task = { ...this.task, recurring: e.target.checked };
+  }
+
+  _handleRecurrenceInterval(e) {
+    // Convert the value to a number, or set to empty if none
+    const val = e.target.value;
+    this.task = { ...this.task, recurrence_interval: val ? parseInt(val, 10) : '' };
+  }
+
+  _handleAlert(e) {
+    this.task = { ...this.task, alert: e.target.checked };
   }
 
   _createOrUpdateTask() {
@@ -54,7 +65,7 @@ class TaskerNewTaskCard extends LitElement {
     } else {
       console.error("Home Assistant instance not available");
     }
-    // Clear the form after submission
+    // Clear the form after submission.
     this.task = {
       friendly_name: '',
       description: '',
@@ -68,34 +79,54 @@ class TaskerNewTaskCard extends LitElement {
   render() {
     return html`
       <ha-card header="${this.config.title}">
-        <div>
-          <label>Friendly Name</label>
-          <input type="text" name="friendly_name" .value="${this.task.friendly_name}" @input="${this._handleInput}" />
-        </div>
-        <div>
-          <label>Description</label>
-          <input type="text" name="description" .value="${this.task.description}" @input="${this._handleInput}" />
-        </div>
-        <div>
-          <label>Start Date</label>
-          <input type="date" name="start_date" .value="${this.task.start_date}" @input="${this._handleInput}" />
-        </div>
-        <div>
-          <label>Recurring</label>
-          <input type="checkbox" name="recurring" .checked="${this.task.recurring}" @change="${this._handleInput}" />
-        </div>
-        <div>
-          <label>Recurrence Interval (days)</label>
-          <input type="number" name="recurrence_interval" .value="${this.task.recurrence_interval}" @input="${this._handleInput}" />
-        </div>
-        <div>
-          <label>Alert</label>
-          <input type="checkbox" name="alert" .checked="${this.task.alert}" @change="${this._handleInput}" />
-        </div>
-        <div>
-          <button @click="${this._createOrUpdateTask}">
-            ${this.task.task_id ? 'Update Task' : 'Create Task'}
-          </button>
+        <div style="padding: 16px;">
+          <!-- Use Home Assistant native form elements -->
+          <ha-textfield
+            label="Friendly Name"
+            .value="${this.task.friendly_name}"
+            @input="${this._handleFriendlyName}">
+          </ha-textfield>
+
+          <ha-textfield
+            label="Description"
+            .value="${this.task.description}"
+            @input="${this._handleDescription}">
+          </ha-textfield>
+
+          <ha-textfield
+            type="date"
+            label="Start Date"
+            .value="${this.task.start_date}"
+            @input="${this._handleStartDate}">
+          </ha-textfield>
+
+          <!-- For booleans, use ha-switch wrapped in ha-formfield -->
+          <ha-formfield label="Recurring">
+            <ha-switch
+              .checked="${this.task.recurring}"
+              @change="${this._handleRecurring}">
+            </ha-switch>
+          </ha-formfield>
+
+          <ha-textfield
+            type="number"
+            label="Recurrence Interval (days)"
+            .value="${this.task.recurrence_interval}"
+            @input="${this._handleRecurrenceInterval}">
+          </ha-textfield>
+
+          <ha-formfield label="Alert">
+            <ha-switch
+              .checked="${this.task.alert}"
+              @change="${this._handleAlert}">
+            </ha-switch>
+          </ha-formfield>
+
+          <div style="text-align: right; margin-top: 16px;">
+            <mwc-button raised @click="${this._createOrUpdateTask}">
+              ${this.task.task_id ? 'Update Task' : 'Create Task'}
+            </mwc-button>
+          </div>
         </div>
       </ha-card>
     `;
