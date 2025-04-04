@@ -120,6 +120,7 @@ class TaskManager:
                 task = Task.from_dict(task_data)
                 self.tasks[task.task_id] = task
 
+
     async def async_save(self):
         """Save tasks to persistent storage."""
         data = {"tasks": [task.to_dict() for task in self.tasks.values()]}

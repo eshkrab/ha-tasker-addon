@@ -26,11 +26,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     await task_manager.async_load()
+    
+    # Publish each loaded task as a Home Assistant state.
+    for task in task_manager.tasks.values():
+        hass.states.async_set(
+            f"{DOMAIN}.{task.task_id}",
+            task.state,
+            task.to_dict()
+        )
+    
     hass.data[DOMAIN][entry.entry_id] = {
         "task_manager": task_manager,
         "config": entry.data,
     }
 
+    # Register your service handlers here ...
     async def handle_add_task(call):
         data = call.data
         friendly_name = data.get("friendly_name")
@@ -87,7 +97,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         task = await task_manager.async_mark_task_done(task_id)
         if task:
             _LOGGER.info("Marked task %s as done", task_id)
-            # Include the attributes from task.to_dict()
             hass.states.async_set(f"{DOMAIN}.{task_id}", task.state, task.to_dict())
         else:
             _LOGGER.error("No task with id %s found", task_id)
@@ -98,7 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.services.async_register(DOMAIN, "mark_task_done", handle_mark_task_done)
     
     return True
-
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
