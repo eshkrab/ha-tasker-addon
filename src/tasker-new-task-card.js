@@ -12,31 +12,28 @@ class TaskerNewTaskCard extends LitElement {
   static get styles() {
     return css`
       ha-card {
-        /* Let ha-card handle its own outer padding if desired;
-           or add a bit more here if you like */
         padding: 16px;
+        width: 100%;
+        box-sizing: border-box;
       }
-
       .form-row {
         margin-bottom: 16px;
       }
-
       ha-textfield {
         display: block;
         width: 100%;
       }
-
       ha-formfield {
         display: block;
         margin-bottom: 16px;
       }
-
       .actions {
         text-align: right;
         margin-top: 16px;
       }
     `;
   }
+  
 
   constructor() {
     super();

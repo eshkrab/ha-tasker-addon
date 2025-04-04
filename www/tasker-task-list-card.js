@@ -24,6 +24,8 @@ class nt extends v{constructor(){super(...arguments),this.renderOptions={host:th
       ha-card {
         padding: 16px;
         margin: 8px;
+        width: 100%;
+        box-sizing: border-box;
       }
       .task {
         display: flex;
@@ -55,12 +57,14 @@ class nt extends v{constructor(){super(...arguments),this.renderOptions={host:th
       mwc-button {
         margin-left: 8px;
       }
-    `}constructor(){super(),this.config={}}set hass(t){this._hass=t}setConfig(t){this.config={title:t.title||"Task List"}}_getTasks(){return this._hass?Object.values(this._hass.states).filter((t=>t.entity_id.startsWith("tasker."))):[]}_calculateDaysUntil(t){if(!t)return"N/A";const e=new Date,s=new Date(t)-e;return Math.ceil(s/864e5)}_markTaskDone(t){this._hass.callService("tasker","mark_task_done",{task_id:t.attributes.task_id})}_deleteTask(t){this._hass.callService("tasker","delete_task",{task_id:t.attributes.task_id})}render(){const t=this._getTasks();return B`
+    `}constructor(){super(),this.config={}}set hass(t){this._hass=t}setConfig(t){this.config={title:t.title||"Task List"}}_getTasks(){return this._hass?Object.values(this._hass.states).filter((t=>t.entity_id.startsWith("tasker."))):[]}_calculateDaysUntil(t){if(!t)return"N/A";const e=new Date,s=new Date(t)-e;return Math.ceil(s/864e5)}_markTaskDone(t){const e=String(t.attributes.task_id||t.entity_id.split(".")[1]);this._hass.callService("tasker","mark_task_done",{task_id:e})}_deleteTask(t){const e=String(t.attributes.task_id||t.entity_id.split(".")[1]);this._hass.callService("tasker","delete_task",{task_id:e})}render(){const t=this._getTasks();return B`
       <ha-card header="${this.config.title}">
-        ${0===t.length?B`<div>No tasks available.</div>`:t.map((t=>{const e=t.attributes,s=this._calculateDaysUntil(e.next_due_date);return B`
+        ${0===t.length?B`<div>No tasks available.</div>`:t.map((t=>{const e=t.attributes||{},s=this._calculateDaysUntil(e.next_due_date);return B`
                 <div class="task">
                   <div class="task-header">
-                    <div class="task-name">${e.friendly_name||"Unnamed Task"}</div>
+                    <div class="task-name">
+                      ${e.friendly_name||"Unnamed Task"}
+                    </div>
                     <div class="task-actions">
                       <mwc-button raised @click="${()=>this._markTaskDone(t)}">
                         Done

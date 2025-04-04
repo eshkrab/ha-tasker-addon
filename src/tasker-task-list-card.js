@@ -13,6 +13,8 @@ class TaskerTaskListCard extends LitElement {
       ha-card {
         padding: 16px;
         margin: 8px;
+        width: 100%;
+        box-sizing: border-box;
       }
       .task {
         display: flex;
@@ -46,13 +48,14 @@ class TaskerTaskListCard extends LitElement {
       }
     `;
   }
+  
 
   constructor() {
     super();
     this.config = {};
   }
 
-  // HA passes the hass object into the card via this setter.
+  // Home Assistant passes the hass object into the card via this setter.
   set hass(hass) {
     this._hass = hass;
   }
@@ -61,7 +64,7 @@ class TaskerTaskListCard extends LitElement {
     this.config = { title: config.title || 'Task List' };
   }
 
-  // Retrieves all tasker entities (those with entity_ids starting with "tasker.")
+  // Retrieves all tasker entities (entity_ids starting with "tasker.")
   _getTasks() {
     if (!this._hass) return [];
     return Object.values(this._hass.states).filter(
@@ -69,7 +72,7 @@ class TaskerTaskListCard extends LitElement {
     );
   }
 
-  // Calculates days until due date based on the task's next_due_date attribute.
+  // Calculates days until due based on the task's next_due_date attribute.
   _calculateDaysUntil(due_date) {
     if (!due_date) return 'N/A';
     const today = new Date();
@@ -79,13 +82,15 @@ class TaskerTaskListCard extends LitElement {
     return days;
   }
 
+  // Always call the mark_task_done service, passing just the task id as a string.
   _markTaskDone(task) {
-    // Expect task.attributes.task_id to exist
-    this._hass.callService('tasker', 'mark_task_done', { task_id: task.attributes.task_id });
+    const task_id = String(task.attributes.task_id || task.entity_id.split('.')[1]);
+    this._hass.callService('tasker', 'mark_task_done', { task_id });
   }
 
   _deleteTask(task) {
-    this._hass.callService('tasker', 'delete_task', { task_id: task.attributes.task_id });
+    const task_id = String(task.attributes.task_id || task.entity_id.split('.')[1]);
+    this._hass.callService('tasker', 'delete_task', { task_id });
   }
 
   render() {
@@ -95,12 +100,14 @@ class TaskerTaskListCard extends LitElement {
         ${tasks.length === 0
           ? html`<div>No tasks available.</div>`
           : tasks.map((task) => {
-              const attr = task.attributes;
+              const attr = task.attributes || {};
               const daysUntil = this._calculateDaysUntil(attr.next_due_date);
               return html`
                 <div class="task">
                   <div class="task-header">
-                    <div class="task-name">${attr.friendly_name || 'Unnamed Task'}</div>
+                    <div class="task-name">
+                      ${attr.friendly_name || 'Unnamed Task'}
+                    </div>
                     <div class="task-actions">
                       <mwc-button raised @click="${() => this._markTaskDone(task)}">
                         Done

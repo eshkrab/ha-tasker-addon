@@ -87,7 +87,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         task = await task_manager.async_mark_task_done(task_id)
         if task:
             _LOGGER.info("Marked task %s as done", task_id)
-            hass.states.async_set(f"{DOMAIN}.{task_id}", task.state)
+            # Include the attributes from task.to_dict()
+            hass.states.async_set(f"{DOMAIN}.{task_id}", task.state, task.to_dict())
         else:
             _LOGGER.error("No task with id %s found", task_id)
     
