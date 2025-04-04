@@ -13,7 +13,7 @@ class TaskerStyledTaskListCard extends LitElement {
       ha-card {
         /* No explicit background set, so it uses the theme's default */
         padding: 16px;
-        margin: 8px;
+        // margin: 8px;
         width: 100%;
         box-sizing: border-box;
       }
