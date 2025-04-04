@@ -18,7 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.info("Setting up Tasker integration from config entry")
     
     hass.data.setdefault(DOMAIN, {})
-    store = Store(hass, STORE_VERSION, STORE_KEY)
+    store = Store(hass, STORE_VERSION, STORE_KEY, private=True)
     task_manager = TaskManager(hass, store)
 
     hass.http.register_static_path(
