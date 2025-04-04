@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, css } from 'lit';
 
 class TaskerNewTaskCard extends LitElement {
   static get properties() {
@@ -9,8 +9,38 @@ class TaskerNewTaskCard extends LitElement {
     };
   }
 
+  static get styles() {
+    return css`
+      ha-card {
+        /* Let ha-card handle its own outer padding if desired;
+           or add a bit more here if you like */
+        padding: 16px;
+      }
+
+      .form-row {
+        margin-bottom: 16px;
+      }
+
+      ha-textfield {
+        display: block;
+        width: 100%;
+      }
+
+      ha-formfield {
+        display: block;
+        margin-bottom: 16px;
+      }
+
+      .actions {
+        text-align: right;
+        margin-top: 16px;
+      }
+    `;
+  }
+
   constructor() {
     super();
+    // Default task values
     this.task = {
       friendly_name: '',
       description: '',
@@ -21,13 +51,13 @@ class TaskerNewTaskCard extends LitElement {
     };
   }
 
-  // Home Assistant passes the hass object via this setter.
+  // Called by Home Assistant to pass in the hass object
   set hass(hass) {
     this._hass = hass;
   }
 
   setConfig(config) {
-    // Ensure a title is defined
+    // Provide a default title if none is given
     this.config = { title: config.title || 'New Task' };
   }
 
@@ -48,7 +78,7 @@ class TaskerNewTaskCard extends LitElement {
   }
 
   _handleRecurrenceInterval(e) {
-    // Convert the value to a number, or set to empty if none
+    // Convert to an integer if the user typed a number, or leave blank if empty
     const val = e.target.value;
     this.task = { ...this.task, recurrence_interval: val ? parseInt(val, 10) : '' };
   }
@@ -65,7 +95,8 @@ class TaskerNewTaskCard extends LitElement {
     } else {
       console.error("Home Assistant instance not available");
     }
-    // Clear the form after submission.
+
+    // Clear the form after submission
     this.task = {
       friendly_name: '',
       description: '',
@@ -78,55 +109,64 @@ class TaskerNewTaskCard extends LitElement {
 
   render() {
     return html`
-      <ha-card header="${this.config.title}">
-        <div style="padding: 16px;">
-          <!-- Use Home Assistant native form elements -->
+      <ha-card .header="${this.config.title}">
+        <!-- Each field is in its own .form-row for spacing -->
+        <div class="form-row">
           <ha-textfield
             label="Friendly Name"
             .value="${this.task.friendly_name}"
-            @input="${this._handleFriendlyName}">
-          </ha-textfield>
+            @input="${this._handleFriendlyName}"
+          ></ha-textfield>
+        </div>
 
+        <div class="form-row">
           <ha-textfield
             label="Description"
             .value="${this.task.description}"
-            @input="${this._handleDescription}">
-          </ha-textfield>
+            @input="${this._handleDescription}"
+          ></ha-textfield>
+        </div>
 
+        <div class="form-row">
           <ha-textfield
             type="date"
             label="Start Date"
             .value="${this.task.start_date}"
-            @input="${this._handleStartDate}">
-          </ha-textfield>
+            @input="${this._handleStartDate}"
+          ></ha-textfield>
+        </div>
 
-          <!-- For booleans, use ha-switch wrapped in ha-formfield -->
+        <div class="form-row">
           <ha-formfield label="Recurring">
             <ha-switch
               .checked="${this.task.recurring}"
-              @change="${this._handleRecurring}">
-            </ha-switch>
+              @change="${this._handleRecurring}"
+            ></ha-switch>
           </ha-formfield>
+        </div>
 
+        <div class="form-row">
           <ha-textfield
             type="number"
             label="Recurrence Interval (days)"
             .value="${this.task.recurrence_interval}"
-            @input="${this._handleRecurrenceInterval}">
-          </ha-textfield>
+            @input="${this._handleRecurrenceInterval}"
+          ></ha-textfield>
+        </div>
 
+        <div class="form-row">
           <ha-formfield label="Alert">
             <ha-switch
               .checked="${this.task.alert}"
-              @change="${this._handleAlert}">
-            </ha-switch>
+              @change="${this._handleAlert}"
+            ></ha-switch>
           </ha-formfield>
+        </div>
 
-          <div style="text-align: right; margin-top: 16px;">
-            <mwc-button raised @click="${this._createOrUpdateTask}">
-              ${this.task.task_id ? 'Update Task' : 'Create Task'}
-            </mwc-button>
-          </div>
+        <div class="actions">
+          <mwc-button raised @click="${this._createOrUpdateTask}">
+            ${this.task.task_id ? 'Update Task' : 'Create Task'}
+          </mwc-button>
         </div>
       </ha-card>
     `;

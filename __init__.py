@@ -47,7 +47,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
         await task_manager.async_add_task(new_task)
         _LOGGER.info("Added task: %s", new_task.to_dict())
-        hass.states.async_set(f"{DOMAIN}.{new_task.task_id}", new_task.state)
+        hass.states.async_set(
+            f"{DOMAIN}.{new_task.task_id}",
+            new_task.state,
+            new_task.to_dict()
+        )
     
     async def handle_update_task(call):
         task_id = call.data.get("task_id")

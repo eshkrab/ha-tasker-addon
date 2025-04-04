@@ -15,68 +15,89 @@ class TaskerTaskListCard extends LitElement {
         margin: 8px;
       }
       .task {
-        border-bottom: 1px solid #ddd;
-        padding: 8px 0;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--divider-color, #ccc);
+        padding: 8px 0;
       }
-      .buttons {
-        margin-top: 4px;
+      .task:last-child {
+        border-bottom: none;
       }
-      button {
-        margin-right: 8px;
-        padding: 4px 8px;
+      .task-name {
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .task-info {
         font-size: 0.9em;
+        color: var(--primary-text-color, #333);
       }
     `;
   }
 
-  setConfig(config) {
-    if (!config.title) {
-      throw new Error('You need to define a title in the config');
-    }
-    this.config = config;
+  constructor() {
+    super();
+    this.config = {};
   }
 
-  // Get tasks from Home Assistant state (assuming your integration sets states in domain "tasker")
-  getTasks() {
-    if (!this.hass) return [];
-    // Filter states whose entity_id starts with "tasker."
-    return Object.values(this.hass.states).filter(
+  // Home Assistant passes the hass object to the card
+  set hass(hass) {
+    this._hass = hass;
+  }
+
+  setConfig(config) {
+    this.config = { title: config.title || 'Task List' };
+  }
+
+  // Retrieve all task entities (assuming their entity_ids start with "tasker.")
+  _getTasks() {
+    if (!this._hass) return [];
+    return Object.values(this._hass.states).filter(
       (state) => state.entity_id.startsWith('tasker.')
     );
   }
 
-  _markDone(task) {
-    this.hass.callService('tasker', 'mark_task_done', { task_id: task.attributes.task_id });
-  }
-
-  _deleteTask(task) {
-    this.hass.callService('tasker', 'delete_task', { task_id: task.attributes.task_id });
+  // Calculate days until due (if next_due_date is provided)
+  _calculateDaysUntil(due_date) {
+    if (!due_date) return 'N/A';
+    const today = new Date();
+    const due = new Date(due_date);
+    const diff = due - today;
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days;
   }
 
   render() {
-    const tasks = this.getTasks();
+    const tasks = this._getTasks();
     return html`
       <ha-card header="${this.config.title}">
         ${tasks.length === 0
-          ? html`<div>No tasks to display.</div>`
-          : tasks.map(
-              (task) => html`
+          ? html`<div>No tasks available</div>`
+          : tasks.map((task) => {
+              const attr = task.attributes;
+              const daysUntil = this._calculateDaysUntil(attr.next_due_date);
+              return html`
                 <div class="task">
                   <div>
-                    <strong>${task.attributes.friendly_name}</strong> – <em>${task.state}</em>
+                    <div class="task-name">${attr.friendly_name || 'Unnamed Task'}</div>
+                    <div class="task-info">
+                      Last Done: ${attr.last_done ? attr.last_done : 'Never'}
+                    </div>
                   </div>
-                  <div class="buttons">
-                    <button @click="${() => this._markDone(task)}">Mark Done</button>
-                    <button @click="${() => this._deleteTask(task)}">Delete</button>
+                  <div class="task-info">
+                    Due in: ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}<br />
+                    State: ${task.state}
                   </div>
                 </div>
-              `
-            )}
+              `;
+            })}
       </ha-card>
     `;
   }
 }
 
 customElements.define('tasker-task-list-card', TaskerTaskListCard);
+console.log(
+  'tasker-task-list-card registered',
+  customElements.get('tasker-task-list-card')
+);
