@@ -55,7 +55,10 @@ class TaskerNewTaskCard extends LitElement {
 
   setConfig(config) {
     // Provide a default title if none is given
-    this.config = { title: config.title || 'New Task' };
+    this.config = {
+      title: config.task_list_name || 'New Task',
+      recurrence_interval: config.default_recurrence || 7,
+    }; 
   }
 
   _handleFriendlyName(e) {
