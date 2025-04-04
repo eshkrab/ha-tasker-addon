@@ -11,30 +11,30 @@ class TaskerStyledTaskListCard extends LitElement {
   static get styles() {
     return css`
       ha-card {
-        padding: 8px;
+        /* No explicit background set, so it uses the theme's default */
+        padding: 16px;
         margin: 8px;
         width: 100%;
         box-sizing: border-box;
-        background: var(--ha-card-background);
       }
       .task-row {
         display: flex;
         align-items: center;
-        padding: 8px;
-        border-radius: 24px;
-        margin: 4px 0;
-        /* Optional: use a subtle overlay or theme variable */
-        background: var(--ha-card-background, rgba(255, 255, 255, 0.05));
+        padding: 8px 0;
+        border-bottom: 1px solid var(--divider-color, #dcdcdc);
+      }
+      .task-row:last-child {
+        border-bottom: none;
       }
       .left-icon {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background-color: var(--secondary-background-color);
+        /* Also no forced background color here; it inherits from the card or theme */
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 8px;
+        margin-right: 16px;
       }
       .left-icon ha-icon {
         color: var(--primary-text-color);
@@ -43,28 +43,30 @@ class TaskerStyledTaskListCard extends LitElement {
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        margin-right: 8px;
+        overflow: hidden;
       }
       .task-name {
-        font-weight: 500;
-        font-size: 1em;
+        font-size: 1.1em;
+        font-weight: bold;
         margin: 0;
         color: var(--primary-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .task-subtext {
         font-size: 0.9em;
         color: var(--secondary-text-color);
+        margin-top: 2px;
       }
       .task-actions {
         display: flex;
-        align-items: center;
+        gap: 8px;
       }
       mwc-icon-button {
         --mdc-icon-button-size: 36px;
         --mdc-icon-size: 20px;
         color: var(--primary-text-color);
-        margin-left: 8px;
       }
     `;
   }
@@ -74,7 +76,7 @@ class TaskerStyledTaskListCard extends LitElement {
     this.config = {};
   }
 
-  // When HA sets hass, force a re-render.
+  // Force re-render whenever hass changes
   set hass(hass) {
     const oldHass = this._hass;
     this._hass = hass;
@@ -82,11 +84,10 @@ class TaskerStyledTaskListCard extends LitElement {
   }
 
   setConfig(config) {
-    // Use the title from the card config, or fallback to integration config (if available)
-    this.config = { title: config.title || 'Task List' };
+    this.config = { title: config.title || 'My Tasks' };
   }
 
-  // Retrieve all tasker entities (entity_ids starting with "tasker.")
+  // Return all tasker.* entities
   _getTasks() {
     if (!this._hass) return [];
     return Object.values(this._hass.states).filter(
@@ -94,7 +95,6 @@ class TaskerStyledTaskListCard extends LitElement {
     );
   }
 
-  // Calculate days until due based on the task's next_due_date attribute.
   _calculateDaysUntil(due_date) {
     if (!due_date) return 'N/A';
     const today = new Date();
@@ -103,7 +103,6 @@ class TaskerStyledTaskListCard extends LitElement {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
-  // Compute subtext combining last_done and days until due.
   _computeSubtext(task) {
     const attr = task.attributes || {};
     const daysUntil = this._calculateDaysUntil(attr.next_due_date);
@@ -111,7 +110,6 @@ class TaskerStyledTaskListCard extends LitElement {
     return `Last done: ${lastDone} • Due in: ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}`;
   }
 
-  // Compute left icon based on task state.
   _computeLeftIcon(task) {
     switch (task.state) {
       case 'done':
@@ -125,13 +123,11 @@ class TaskerStyledTaskListCard extends LitElement {
     }
   }
 
-  // Service call: Edit task (placeholder)
   _editTask(task) {
     console.log("Edit clicked for", task.entity_id);
-    // Implement editing behavior (e.g., open a dialog) if needed.
+    // Implement your edit functionality here
   }
 
-  // Always call mark_task_done with just the task ID.
   _markTaskDone(task) {
     const task_id = String(task.attributes.task_id || task.entity_id.split('.')[1]);
     this._hass.callService('tasker', 'mark_task_done', { task_id });
@@ -150,13 +146,14 @@ class TaskerStyledTaskListCard extends LitElement {
           ? html`<div style="padding:8px;">No tasks available.</div>`
           : tasks.map((task) => {
               const attr = task.attributes || {};
-              const leftIcon = this._computeLeftIcon(task);
+              const icon = this._computeLeftIcon(task);
               const name = attr.friendly_name || task.entity_id;
               const subtext = this._computeSubtext(task);
+
               return html`
                 <div class="task-row">
                   <div class="left-icon">
-                    <ha-icon .icon="${leftIcon}"></ha-icon>
+                    <ha-icon .icon="${icon}"></ha-icon>
                   </div>
                   <div class="task-info">
                     <div class="task-name">${name}</div>
@@ -182,4 +179,4 @@ class TaskerStyledTaskListCard extends LitElement {
 }
 
 customElements.define('tasker-task-list-card', TaskerStyledTaskListCard);
-console.log('tasker-styled-task-list-card registered', customElements.get('tasker-task-list-card'));
+console.log('tasker-task-list-card registered', customElements.get('tasker-task-list-card'));

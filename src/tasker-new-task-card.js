@@ -109,7 +109,7 @@ class TaskerNewTaskCard extends LitElement {
 
   render() {
     return html`
-      <ha-card .header="${this.config.title}">
+      <ha-card>
         <!-- Each field is in its own .form-row for spacing -->
         <div class="form-row">
           <ha-textfield
