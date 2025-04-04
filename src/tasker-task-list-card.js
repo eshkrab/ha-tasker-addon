@@ -11,11 +11,11 @@ class TaskerStyledTaskListCard extends LitElement {
   static get styles() {
     return css`
       ha-card {
-        /* Use default HA card background & theming */
         padding: 8px;
         margin: 8px;
         width: 100%;
         box-sizing: border-box;
+        background: var(--ha-card-background);
       }
       .task-row {
         display: flex;
@@ -23,14 +23,13 @@ class TaskerStyledTaskListCard extends LitElement {
         padding: 8px;
         border-radius: 24px;
         margin: 4px 0;
-        /* Rely on theme for background color, or set a subtle overlay:
-           background: var(--ha-card-background, rgba(255, 255, 255, 0.05)); */
+        /* Optional: use a subtle overlay or theme variable */
+        background: var(--ha-card-background, rgba(255, 255, 255, 0.05));
       }
       .left-icon {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        /* Use a subtle background that also depends on theme variable */
         background-color: var(--secondary-background-color);
         display: flex;
         align-items: center;
@@ -75,17 +74,19 @@ class TaskerStyledTaskListCard extends LitElement {
     this.config = {};
   }
 
-  // Called by HA to pass the hass object
+  // When HA sets hass, force a re-render.
   set hass(hass) {
+    const oldHass = this._hass;
     this._hass = hass;
+    this.requestUpdate("hass", oldHass);
   }
 
   setConfig(config) {
-    // Use a default title if none is provided
-    this.config = { title: config.title || 'My Tasks' };
+    // Use the title from the card config, or fallback to integration config (if available)
+    this.config = { title: config.title || 'Task List' };
   }
 
-  // Filter out all "tasker." entities
+  // Retrieve all tasker entities (entity_ids starting with "tasker.")
   _getTasks() {
     if (!this._hass) return [];
     return Object.values(this._hass.states).filter(
@@ -93,6 +94,7 @@ class TaskerStyledTaskListCard extends LitElement {
     );
   }
 
+  // Calculate days until due based on the task's next_due_date attribute.
   _calculateDaysUntil(due_date) {
     if (!due_date) return 'N/A';
     const today = new Date();
@@ -101,24 +103,15 @@ class TaskerStyledTaskListCard extends LitElement {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
+  // Compute subtext combining last_done and days until due.
   _computeSubtext(task) {
     const attr = task.attributes || {};
     const daysUntil = this._calculateDaysUntil(attr.next_due_date);
-    const lastDone = attr.last_done;
-    let subtext = "";
-    if (lastDone) {
-      subtext += `Last done: ${lastDone}`;
-    }
-    if (daysUntil !== 'N/A') {
-      if (subtext) subtext += " • ";
-      subtext += `Due in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
-    }
-    if (!subtext) {
-      subtext = task.state;
-    }
-    return subtext;
+    const lastDone = attr.last_done || 'Never';
+    return `Last done: ${lastDone} • Due in: ${daysUntil} ${daysUntil === 1 ? 'day' : 'days'}`;
   }
 
+  // Compute left icon based on task state.
   _computeLeftIcon(task) {
     switch (task.state) {
       case 'done':
@@ -132,10 +125,13 @@ class TaskerStyledTaskListCard extends LitElement {
     }
   }
 
+  // Service call: Edit task (placeholder)
   _editTask(task) {
     console.log("Edit clicked for", task.entity_id);
+    // Implement editing behavior (e.g., open a dialog) if needed.
   }
 
+  // Always call mark_task_done with just the task ID.
   _markTaskDone(task) {
     const task_id = String(task.attributes.task_id || task.entity_id.split('.')[1]);
     this._hass.callService('tasker', 'mark_task_done', { task_id });
@@ -154,24 +150,18 @@ class TaskerStyledTaskListCard extends LitElement {
           ? html`<div style="padding:8px;">No tasks available.</div>`
           : tasks.map((task) => {
               const attr = task.attributes || {};
-              const icon = this._computeLeftIcon(task);
+              const leftIcon = this._computeLeftIcon(task);
               const name = attr.friendly_name || task.entity_id;
               const subtext = this._computeSubtext(task);
-
               return html`
                 <div class="task-row">
-                  <!-- Left icon circle -->
                   <div class="left-icon">
-                    <ha-icon .icon="${icon}"></ha-icon>
+                    <ha-icon .icon="${leftIcon}"></ha-icon>
                   </div>
-
-                  <!-- Middle text -->
                   <div class="task-info">
                     <div class="task-name">${name}</div>
                     <div class="task-subtext">${subtext}</div>
                   </div>
-
-                  <!-- Right side icon buttons -->
                   <div class="task-actions">
                     <mwc-icon-button @click="${() => this._editTask(task)}">
                       <ha-icon icon="mdi:pencil"></ha-icon>
