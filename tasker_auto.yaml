@@ -1,0 +1,30 @@
+- id: daily_task_alert_telegram
+  alias: "Send Daily Task Alert via Telegram"
+  trigger:
+    platform: time
+    at: "{{ states('input_datetime.tasker_alarm_time') }}"
+  action:
+    - service: notify.telegram
+      data_template:
+        message: >
+          {% set all_tasks = states | selectattr('entity_id', 'search', '^tasker\\.') | list %}
+          {% set overdue_tasks = all_tasks | selectattr('state', 'equalto', 'overdue') | list %}
+          {% set pending_tasks = all_tasks | selectattr('state', 'equalto', 'pending') | list %}
+          {% if overdue_tasks | length == 0 and pending_tasks | length == 0 %}
+            All tasks are on track! Good Job!
+          {% else %}
+            <b>Task Reminder:</b>
+            {% if overdue_tasks | length > 0 %}
+              <b>OVERDUE:</b>
+              {% for task in overdue_tasks %}
+                - {{ task.attributes.friendly_name | e }} (Due: {{ task.attributes.next_due_date or 'N/A' | e }})
+              {% endfor %}
+            {% endif %}
+            {% if pending_tasks | length > 0 %}
+              <b>PENDING</b>
+              {% for task in pending_tasks %}
+                - {{ task.attributes.friendly_name | e }} (Due: {{ task.attributes.next_due_date or 'N/A' | e }})
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+
